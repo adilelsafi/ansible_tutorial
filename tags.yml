@@ -1,0 +1,62 @@
+---
+- name: Update and install packages
+  hosts: all
+  become: true
+  tasks:
+    - name: Install updates (CentOS)
+      dnf:
+        name: '*'
+        state: latest
+      when: ansible_distribution == "CentOS"
+      tags: 
+        - centos_update
+
+    - name: Update and upgrade packages (Ubuntu)
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+      tags: 
+        - ubuntu_update
+
+- name: Install web servers
+  hosts: web_servers
+  become: true
+  tasks:
+    - name: Install Apache and PHP (Ubuntu)
+      apt:
+        name:
+          - apache2
+          - libapache2-mod-php
+        state: latest
+      when: ansible_distribution == "Ubuntu"
+      tags: 
+        - ubuntu_web_servers
+
+    - name: Install Apache and PHP (CentOS)
+      dnf:
+        name:
+          - httpd
+          - php
+        state: latest
+        update_cache: yes
+      when: ansible_distribution == "CentOS"
+      tags: 
+        - centos_web_servers
+    - name: copy default html file for sit
+      tags: apache,apache2,httpd
+      copy:
+        src: default_site.html
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: 0644
+    - name: Install MariaDB (Ubuntu)
+      apt:
+        name: mariadb-server
+        state: latest
+      when: ansible_distribution == "Ubuntu"
+      tags: 
+        - ubuntu_web_servers

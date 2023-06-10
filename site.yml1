@@ -1,25 +1,27 @@
-x---
-- hosts: all
+---
+- name: Update and install packages
+  hosts: all
   become: true
   tasks:
-    - name: install updates (CentOS)
+    - name: Install updates (CentOS)
       dnf:
-        update_only: yes
-        update_cache: yes
+        name: '*'
+        state: latest
       when: ansible_distribution == "CentOS"
-- hosts: workstations
-  become: true
-  tasks:
-    - name: install updates (Ubuntu)
+
+    - name: Update and upgrade packages (Ubuntu)
       apt:
-        update_only: yes
-        update_ccache: yes
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+        update_cache: yes
       when: ansible_distribution == "Ubuntu"
 
-- hosts: web_servers
+- name: Install web servers
+  hosts: web_servers
   become: true
   tasks:
-    - name: Install Apache and PHP for Ubuntu servers
+    - name: Install Apache and PHP (Ubuntu)
       apt:
         name:
           - apache2
@@ -27,7 +29,7 @@ x---
         state: latest
       when: ansible_distribution == "Ubuntu"
 
-    - name: Install Apache and add PHP for CentOS
+    - name: Install Apache and PHP (CentOS)
       dnf:
         name:
           - httpd
@@ -36,18 +38,8 @@ x---
         update_cache: yes
       when: ansible_distribution == "CentOS"
 
-    - name: install mariadb package (Ubuntu)
+    - name: Install MariaDB (Ubuntu)
       apt:
         name: mariadb-server
         state: latest
       when: ansible_distribution == "Ubuntu"
-
-- hosts: file_servers
-  become: true
-  tasks:
-
-    - name: install samba package
-      package:
-        name: samba
-        state: latest
-
