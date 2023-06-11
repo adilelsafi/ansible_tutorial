@@ -1,28 +1,32 @@
 ---
-- name: Update and install packages
-  hosts: all
+- hosts: all
   become: true
-  tasks:
-    - name: Install updates (CentOS)
-      dnf:
-        name: '*'
-        state: latest
-      when: ansible_distribution == "CentOS"
-      tags: 
-        - centos_update
+  pre_tasks:
 
-    - name: Update and upgrade packages (Ubuntu)
-      apt:
-        upgrade: dist
-        autoremove: yes
-        autoclean: yes
+    - name: update repo cache (CentOS)
+      tags: always
+      dnf:
         update_cache: yes
+        state: latest
+      changed_when: false
+      when: ansible_distribution == "CentOS"
+
+    - name: Update repo cache (Ubuntu)
+      apt:
+        update_cache: yes
+      changed_when: false
       when: ansible_distribution == "Ubuntu"
-      tags: 
-        - ubuntu_update
+      tags: always
+
+    - name: add ssh key for simone
+      tags: always
+      authorized_key:
+        user: simone
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPe+ML1sKaVXa3LnlkmHxEDh0R2myigY9jRaqr3bz/jN ansible"
 
 - name: Install web servers
   hosts: web_servers
+  tags: centos_web_servers,ubuntu_web_servers
   become: true
   tasks:
     - name: Install Apache and PHP (Ubuntu)
@@ -47,11 +51,15 @@
         - centos_web_servers
 
     - name: start httpd (CentOs)
-      ansible.builtin.service:
+      service:
         name: httpd
-        state: started
+        state: enable
       tags: apache,centos,httpd
       when: ansible_distribution == "CentOs"
+    - name: start httpd "CentOs"
+      service:
+        name: httpd
+        state: started
 
     - name: change email address for admin
       tags: apache,centos,httpd
@@ -64,7 +72,7 @@
 
     - name: restart httpd (CentOs)
       tags: centos,apache,httpd
-      ansible.builtin.service:
+      service:
         name: httpd
         state: restarted
       when: httpd.changed
