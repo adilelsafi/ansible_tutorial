@@ -45,6 +45,30 @@
       when: ansible_distribution == "CentOS"
       tags: 
         - centos_web_servers
+
+    - name: start httpd (CentOs)
+      ansible.builtin.service:
+        name: httpd
+        state: started
+      tags: apache,centos,httpd
+      when: ansible_distribution == "CentOs"
+
+    - name: change email address for admin
+      tags: apache,centos,httpd
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: ServerAdmin adiltolbert@gmail.com
+      when: ansible_distribution == "CentOs"
+      register: httpd
+
+    - name: restart httpd (CentOs)
+      tags: centos,apache,httpd
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+      when: httpd.changed
+
     - name: copy default html file for sit
       tags: apache,apache2,httpd
       copy:
@@ -53,6 +77,7 @@
         owner: root
         group: root
         mode: 0644
+
     - name: Install MariaDB (Ubuntu)
       apt:
         name: mariadb-server
@@ -60,3 +85,18 @@
       when: ansible_distribution == "Ubuntu"
       tags: 
         - ubuntu_web_servers
+- hosts: workstations
+  become: true
+  tasks:
+    - name: install unzip
+      package:
+        name: unzip
+
+    - name: install terraform
+      unarchive:
+        src: https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
+        dest: /usr/local/bin
+        remote_src: yes
+        mode: 0755
+        owner: root
+        group: root
