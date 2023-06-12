@@ -21,7 +21,7 @@
       tags: ubuntu_update
 
 
-- hosts: workstations
+- hosts: all
   become: true
   tasks:
     - name: create simone user
